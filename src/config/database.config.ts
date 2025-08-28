@@ -16,4 +16,5 @@ export const typeOrmConfig = (
   database: process.env.MYSQLDATABASE || configService.get<string>('DB_NAME'),
   entities: [__dirname + '/../**/*.entity.{ts,js}'],
   synchronize: false,
+  logging: ['schema', 'error'],
 });

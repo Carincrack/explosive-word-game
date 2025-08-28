@@ -3,29 +3,34 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { getDatabaseConfig } from './config/database.config';
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
+
+// Player
 import { Player } from './player/player.entity';
 import { PlayersService } from './player/players.service';
 import { PlayersController } from './player/players.controller';
 
+// Room
+import { Room } from './room/room.entity';
+import { RoomsController } from './room/RoomsController';
+import { RoomsService } from './room/rooms.service';
+
+// Socket
+import { SocketGateway } from './socket/socket.gateway';
+import { typeOrmConfig } from './config/database.config';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: getDatabaseConfig,
+      useFactory: typeOrmConfig, // 👈 usa la función real definida abajo
     }),
-
-    // Registramos el repositorio de Player directamente en AppModule
-    TypeOrmModule.forFeature([Player]),
+    TypeOrmModule.forFeature([Player, Room]),
   ],
-  // Agregamos el controller de Players aquí mismo
-  controllers: [AppController, PlayersController],
-  // Y el service de Players aquí mismo también
-  providers: [AppService, PlayersService],
+  controllers: [AppController, PlayersController, RoomsController],
+  providers: [AppService, PlayersService, RoomsService, SocketGateway],
 })
 export class AppModule {}

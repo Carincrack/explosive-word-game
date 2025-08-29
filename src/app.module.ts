@@ -19,6 +19,12 @@ import { RoomsService } from './room/rooms.service';
 // Socket
 import { SocketGateway } from './socket/socket.gateway';
 import { typeOrmConfig } from './config/database.config';
+// import { GameModule } from './game/game.module';
+import { RoundsModule } from './rounds/rounds.module';
+import { RankingModule } from './ranking/ranking.module';
+
+// src/app.module.ts
+import { GameModule } from './game/game.module'; // ✅ Descomentar e importar
 
 @Module({
   imports: [
@@ -26,9 +32,12 @@ import { typeOrmConfig } from './config/database.config';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: typeOrmConfig, // 👈 usa la función real definida abajo
+      useFactory: typeOrmConfig,
     }),
     TypeOrmModule.forFeature([Player, Room]),
+    GameModule, // ✅ <--- AHORA SÍ LO USAMOS
+    RoundsModule,
+    RankingModule,
   ],
   controllers: [AppController, PlayersController, RoomsController],
   providers: [AppService, PlayersService, RoomsService, SocketGateway],

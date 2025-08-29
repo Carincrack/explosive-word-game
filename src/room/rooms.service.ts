@@ -1,37 +1,54 @@
 // src/rooms/rooms.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Room } from './room.entity';
+import { Room, RoomStatus } from './room.entity';
+import { Player } from 'src/player/player.entity';
+import { GamesService } from 'src/game/game.service';
 
-function generateCode(length = 6): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  return Array.from(
-    { length },
-    () => chars[Math.floor(Math.random() * chars.length)],
-  ).join('');
+function randomCode(len = 6) {
+  return Math.random()
+    .toString(36)
+    .slice(2, 2 + len)
+    .toUpperCase();
 }
 
 @Injectable()
 export class RoomsService {
-  constructor(@InjectRepository(Room) private repo: Repository<Room>) {}
+  constructor(
+    @InjectRepository(Room) private rooms: Repository<Room>,
+    @InjectRepository(Player) private players: Repository<Player>,
+    private games: GamesService,
+  ) {}
 
-  async create(): Promise<Room> {
-    const code = generateCode();
-    const room = this.repo.create({ code });
-    return this.repo.save(room);
+  async create() {
+    const room = this.rooms.create({ code: randomCode() });
+    return this.rooms.save(room);
   }
 
-  async joinByCode(code: string): Promise<Room> {
-    const room = await this.repo.findOne({ where: { code } });
-    if (!room) throw new NotFoundException('La sala no existe');
-    room.playerCount++;
-    return this.repo.save(room);
+  // Para simplicidad, el “membership” lo gestiona el engine en memoria
+  async join(roomId: number, playerId: number) {
+    const room = await this.rooms.findOne({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('Sala no existe');
+    const player = await this.players.findOne({ where: { id: playerId } });
+    if (!player) throw new NotFoundException('Jugador no existe');
+    // eslint-disable-next-line prettier/prettier
+    if(room.status !== RoomStatus.Waiting) throw new BadRequestException('La sala ya inició');
+    // El Gateway validará pertenencia al entrar por socket
+    return { ok: true, roomId: room.id, roomCode: room.code, player };
   }
 
-  async findByCode(code: string): Promise<Room> {
-    const room = await this.repo.findOne({ where: { code } });
-    if (!room) throw new NotFoundException('La sala no existe');
-    return room;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getPlayers(roomId: number) {
+    /* opcional si persistes membresía */ return [];
+  }
+
+  async startGame(roomId: number) {
+    // crea Game y arranca engine
+    return this.games.createAndStart(roomId);
   }
 }

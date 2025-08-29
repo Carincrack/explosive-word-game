@@ -1,0 +1,64 @@
+// src/gateway/game.gateway.ts
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { GameEngineService } from '../engine/game-engine.service';
+import { GamesService } from '../game.service';
+
+@WebSocketGateway({ namespace: 'game', cors: { origin: '*' } })
+export class GameGateway {
+  @WebSocketServer() io: Server;
+  private roomOf = new Map<string, number>(); // socketId -> roomId
+  private playerOf = new Map<string, number>(); // socketId -> playerId
+
+  constructor(
+    private engine: GameEngineService,
+    private games: GamesService,
+  ) {}
+
+  afterInit() {
+    this.engine.attachServer(this.io);
+  }
+
+  @SubscribeMessage('JoinRoom')
+  handleJoin(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: number; playerId: number; name: string },
+  ) {
+    const roomChannel = `room-${data.roomId}`;
+    void client.join(roomChannel);
+    this.roomOf.set(client.id, data.roomId);
+    this.playerOf.set(client.id, data.playerId);
+    this.io
+      .to(roomChannel)
+      .emit('PlayerJoined', { playerId: data.playerId, name: data.name });
+  }
+
+  @SubscribeMessage('StartGame')
+  async handleStart(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: number; playerIds: number[] },
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const { gameId } = await this.games.createAndStart(
+      data.roomId,
+      data.playerIds,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    this.io.to(`room-${data.roomId}`).emit('GameStarted', { gameId });
+  }
+
+  @SubscribeMessage('SubmitWord')
+  onWord(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { gameId: number; word: string },
+  ) {
+    const playerId = this.playerOf.get(client.id)!;
+    this.engine.submitWord(data.gameId, playerId, data.word);
+  }
+}

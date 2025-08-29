@@ -1,32 +1,27 @@
 // src/rooms/rooms.controller.ts
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
-import { SocketGateway } from 'src/socket/socket.gateway';
 
 @Controller('api/rooms')
 export class RoomsController {
-  constructor(
-    private readonly roomsService: RoomsService,
-    private readonly gateway: SocketGateway,
-  ) {}
+  constructor(private rooms: RoomsService) {}
 
-  @Post()
-  create() {
-    return this.roomsService.create();
+  @Post() create() {
+    return this.rooms.create();
   }
 
-  @Post('join')
-  async join(@Body() body: { code: string; playerName: string }) {
-    const room = await this.roomsService.joinByCode(body.code);
-
-    // Emitir evento a la sala (room-{code}) por socket
-    this.gateway.notifyPlayerJoined(body.code, body.playerName);
-
-    return { message: 'Unido correctamente', room };
+  @Post(':roomId/join')
+  join(@Param('roomId') roomId: number, @Body() body: { playerId: number }) {
+    return this.rooms.join(+roomId, body.playerId);
   }
 
-  @Get(':code')
-  find(@Param('code') code: string) {
-    return this.roomsService.findByCode(code);
+  @Get(':roomId/players')
+  players(@Param('roomId') roomId: number) {
+    return this.rooms.getPlayers(+roomId);
+  }
+
+  @Post(':roomId/start')
+  start(@Param('roomId') roomId: number) {
+    return this.rooms.startGame(+roomId);
   }
 }

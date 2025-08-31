@@ -25,6 +25,7 @@ import { RankingModule } from './ranking/ranking.module';
 
 // src/app.module.ts
 import { GameModule } from './game/game.module'; // ✅ Descomentar e importar
+import { RoomMember } from './room/room-member.entity';
 
 @Module({
   imports: [
@@ -34,7 +35,7 @@ import { GameModule } from './game/game.module'; // ✅ Descomentar e importar
       inject: [ConfigService],
       useFactory: typeOrmConfig,
     }),
-    TypeOrmModule.forFeature([Player, Room]),
+    TypeOrmModule.forFeature([Player, Room, RoomMember]),
     GameModule, // ✅ <--- AHORA SÍ LO USAMOS
     RoundsModule,
     RankingModule,

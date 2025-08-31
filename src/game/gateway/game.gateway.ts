@@ -42,15 +42,12 @@ export class GameGateway {
   @SubscribeMessage('StartGame')
   async handleStart(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: number; playerIds: number[] },
+    @MessageBody() data: { roomCode: string },
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const { gameId } = await this.games.createAndStart(
-      data.roomId,
-      data.playerIds,
+    const { gameId, roomId } = await this.games.createAndStartByCode(
+      data.roomCode,
     );
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    this.io.to(`room-${data.roomId}`).emit('GameStarted', { gameId });
+    this.io.to(`room-${roomId}`).emit('GameStarted', { gameId });
   }
 
   @SubscribeMessage('SubmitWord')

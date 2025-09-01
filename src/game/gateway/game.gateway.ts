@@ -10,11 +10,15 @@ import { Server, Socket } from 'socket.io';
 import { GameEngineService } from '../engine/game-engine.service';
 import { GamesService } from '../game.service';
 
-@WebSocketGateway({ namespace: 'game', cors: { origin: '*' } })
+@WebSocketGateway({
+  namespace: '/game', // <- ✅ IMPORTANTE: separa namespace
+  cors: { origin: '*' },
+  path: '/socket.io', // <- ✅ asegúrate que use el mismo path
+})
 export class GameGateway {
   @WebSocketServer() io: Server;
-  private roomOf = new Map<string, number>(); // socketId -> roomId
-  private playerOf = new Map<string, number>(); // socketId -> playerId
+  private roomOf = new Map<string, number>();
+  private playerOf = new Map<string, number>();
 
   constructor(
     private engine: GameEngineService,
@@ -56,6 +60,6 @@ export class GameGateway {
     @MessageBody() data: { gameId: number; word: string },
   ) {
     const playerId = this.playerOf.get(client.id)!;
-    this.engine.submitWord(data.gameId, playerId, data.word);
+    void this.engine.submitWord(data.gameId, playerId, data.word);
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { LobbyService } from './lobby.service';
+import { DictionaryService } from '../../dictionary.service';
 import { GameConstants } from '../constants/game.constants';
 
 @Injectable()
@@ -9,7 +10,10 @@ export class GameService {
   private timers: Map<string, NodeJS.Timeout> = new Map();
   private usedWords: Map<string, Set<string>> = new Map();
 
-  constructor(private readonly lobbyService: LobbyService) {}
+  constructor(
+    private readonly lobbyService: LobbyService,
+    private readonly dictionaryService: DictionaryService
+  ) {}
 
   startGame(lobbyId: string, server: Server): void {
     const lobby = this.lobbyService.getLobby(lobbyId);
@@ -96,49 +100,79 @@ export class GameService {
     this.startTurn(lobbyId, server);
   }
 
-  validateWord(lobbyId: string, word: string): boolean {
+  // Validación usando DictionaryService
+  async validateWord(lobbyId: string, word: string): Promise<{ isValid: boolean; reason?: string }> {
     const syllable = this.currentSyllables.get(lobbyId);
     const usedWords = this.usedWords.get(lobbyId);
     
-    if (!syllable || !usedWords) return false;
+    if (!syllable || !usedWords) {
+      return { isValid: false, reason: 'Estado del juego inválido' };
+    }
     
-    const lowerWord = word.toLowerCase();
-    const lowerSyllable = syllable.toLowerCase();
+    const lowerWord = word.toLowerCase().trim();
     
-    // Verificar si la palabra contiene la sílaba y no ha sido usada
-    return lowerWord.includes(lowerSyllable) && !usedWords.has(lowerWord);
+    // Verificar si ya fue usada
+    if (usedWords.has(lowerWord)) {
+      return { isValid: false, reason: 'Palabra ya utilizada' };
+    }
+
+    // Usar el DictionaryService para validar
+    const validation = await this.dictionaryService.validateWordWithSyllable(word, syllable);
+    
+    return validation;
   }
 
-  submitWord(lobbyId: string, playerId: string, word: string, server: Server): void {
+  async submitWord(lobbyId: string, playerId: string, word: string, server: Server): Promise<void> {
     const lobby = this.lobbyService.getLobby(lobbyId);
-    if (!lobby || lobby.currentPlayerId !== playerId) return;
+    if (!lobby || lobby.currentPlayerId !== playerId) {
+      return;
+    }
 
-    const isValid = this.validateWord(lobbyId, word);
+    // Verificar que el diccionario esté listo
+    if (!this.dictionaryService.isReady()) {
+      server.to(playerId).emit('wordRejected', {
+        playerId,
+        word,
+        reason: 'Diccionario aún cargando, intenta de nuevo'
+      });
+      return;
+    }
+
+    const validation = await this.validateWord(lobbyId, word);
     const usedWords = this.usedWords.get(lobbyId);
 
-    if (isValid && usedWords) {
+    if (validation.isValid && usedWords) {
       // Palabra válida
-      usedWords.add(word.toLowerCase());
+      const cleanWord = word.toLowerCase().trim();
+      usedWords.add(cleanWord);
       const player = lobby.getPlayer(playerId);
-      player?.addScore(1);
+      
+      // Calcular puntos basados en la longitud de la palabra
+      const points = Math.max(1, Math.floor(cleanWord.length / 3));
+      player?.addScore(points);
 
       server.to(lobbyId).emit('wordAccepted', {
         playerId,
-        word,
-        score: player?.score
+        word: cleanWord,
+        points,
+        totalScore: player?.score,
+        playerName: player?.name
       });
 
       // Pasar al siguiente turno inmediatamente
-      clearTimeout(this.timers.get(lobbyId));
+      const timer = this.timers.get(lobbyId);
+      if (timer) {
+        clearTimeout(timer);
+        this.timers.delete(lobbyId);
+      }
+      
       this.nextTurn(lobbyId, server);
     } else {
       // Palabra inválida
-      server.to(lobbyId).emit('wordRejected', {
+      server.to(playerId).emit('wordRejected', {
         playerId,
         word,
-        reason: !this.currentSyllables.get(lobbyId) ? 'No syllable' : 
-                usedWords?.has(word.toLowerCase()) ? 'Word already used' : 
-                'Word does not contain syllable'
+        reason: validation.reason || 'Palabra inválida'
       });
     }
   }
@@ -149,8 +183,11 @@ export class GameService {
 
     lobby.status = 'finished';
     
-    // Encontrar al ganador
-    const winner = Array.from(lobby.players.values())[0];
+    // Encontrar al ganador (jugador con más puntos)
+    const players = Array.from(lobby.players.values());
+    const winner = players.reduce((prev, current) => {
+      return (current.score > prev.score) ? current : prev;
+    }, players[0]);
     
     server.to(lobbyId).emit('gameEnded', {
       winner: winner ? {
@@ -158,10 +195,18 @@ export class GameService {
         name: winner.name,
         score: winner.score
       } : null,
-      players: lobby.getPlayerList()
+      players: lobby.getPlayerList().sort((a, b) => b.score - a.score), // Ordenar por puntuación
+      gameStats: {
+        totalWordsUsed: this.usedWords.get(lobbyId)?.size || 0,
+        dictionaryStats: this.dictionaryService.getStats()
+      }
     });
 
     // Limpiar recursos
+    const timer = this.timers.get(lobbyId);
+    if (timer) {
+      clearTimeout(timer);
+    }
     this.timers.delete(lobbyId);
     this.currentSyllables.delete(lobbyId);
     this.usedWords.delete(lobbyId);
@@ -170,5 +215,47 @@ export class GameService {
   private generateSyllable(): string {
     const randomIndex = Math.floor(Math.random() * GameConstants.SYLLABLES.length);
     return GameConstants.SYLLABLES[randomIndex];
+  }
+
+  // Método para obtener estadísticas del juego
+  getGameStats(lobbyId: string) {
+    const currentSyllable = this.currentSyllables.get(lobbyId);
+    const usedWords = this.usedWords.get(lobbyId);
+    const dictionaryStats = this.dictionaryService.getStats();
+    
+    // Encontrar palabras ejemplo para la sílaba actual
+    const exampleWords = currentSyllable ? 
+      this.dictionaryService.findWordsWithSyllable(currentSyllable, 5) : [];
+
+    return {
+      currentSyllable,
+      usedWordsCount: usedWords?.size || 0,
+      usedWordsList: usedWords ? Array.from(usedWords) : [],
+      dictionaryStats,
+      exampleWords: exampleWords
+    };
+  }
+
+  // Método para agregar palabras personalizadas al diccionario
+  addCustomWords(words: string[]): void {
+    this.dictionaryService.addWords(words);
+  }
+
+  // Método para testear una palabra sin afectar el juego
+  async testWord(word: string, syllable: string): Promise<{
+    isValid: boolean;
+    reason?: string;
+    inDictionary: boolean;
+    containsSyllable: boolean;
+  }> {
+    const validation = await this.dictionaryService.validateWordWithSyllable(word, syllable);
+    const inDictionary = await this.dictionaryService.isValidWord(word);
+    const containsSyllable = word.toLowerCase().includes(syllable.toLowerCase());
+
+    return {
+      ...validation,
+      inDictionary,
+      containsSyllable
+    };
   }
 }

@@ -29,6 +29,7 @@ export class DictionaryService {
         words.forEach(word => this.wordSet.add(word));
         console.log(`Diccionario cargado: ${this.wordSet.size} palabras`);
       } else {
+        console.warn('Archivo de diccionario no encontrado, cargando diccionario básico');
         // Diccionario básico de respaldo
         this.loadBasicDictionary();
       }
@@ -44,34 +45,26 @@ export class DictionaryService {
   private loadBasicDictionary(): void {
     const basicWords = [
       // Palabras comunes con diferentes sílabas
-      'casa', 'mesa', 'silla', 'puerta', 'ventana', 'techo', 'piso', 'pared',
-      'agua', 'fuego', 'tierra', 'aire', 'sol', 'luna', 'estrella', 'cielo',
-      'perro', 'gato', 'ratón', 'pájaro', 'pez', 'caballo', 'vaca', 'cerdo',
-      'árbol', 'flor', 'rosa', 'hoja', 'rama', 'raíz', 'fruto', 'semilla',
-      'coche', 'tren', 'avión', 'barco', 'bicicleta', 'moto', 'camión', 'bus',
-      'rojo', 'azul', 'verde', 'amarillo', 'negro', 'blanco', 'gris', 'rosa',
-      'grande', 'pequeño', 'alto', 'bajo', 'gordo', 'delgado', 'fuerte', 'débil',
-      'correr', 'caminar', 'saltar', 'bailar', 'cantar', 'reír', 'llorar', 'dormir',
-      'comer', 'beber', 'cocinar', 'limpiar', 'estudiar', 'trabajar', 'jugar', 'leer',
-      'familia', 'padre', 'madre', 'hijo', 'hija', 'hermano', 'hermana', 'abuelo',
-      'escuela', 'maestro', 'alumno', 'libro', 'cuaderno', 'lápiz', 'papel', 'mesa',
-      'hospital', 'doctor', 'enfermera', 'medicina', 'enfermo', 'sano', 'dolor', 'cura',
-      'tienda', 'dinero', 'comprar', 'vender', 'caro', 'barato', 'precio', 'pagar',
-      'música', 'canción', 'guitarra', 'piano', 'violín', 'tambor', 'flauta', 'banda',
-      'deporte', 'fútbol', 'básquet', 'tenis', 'natación', 'correr', 'ganar', 'perder',
-      // Palabras con sílabas específicas para el juego
-      'taco', 'tapa', 'taxi', 'rata', 'pata', 'data', 'lata', 'mata',
-      'ropa', 'copa', 'sopa', 'lupa', 'papa', 'mapa', 'capa', 'tapa',
-      'cine', 'pino', 'vino', 'sino', 'fino', 'mina', 'rima', 'lima',
-      'loco', 'poco', 'coco', 'roca', 'boca', 'foca', 'coca', 'toca',
-      'mesa', 'pesa', 'tesa', 'besa', 'resa', 'cesa', 'lesa', 'nesa',
-      'pelo', 'bello', 'sello', 'mello', 'cello', 'hello', 'tello', 'vello',
-      'kilo', 'milo', 'silo', 'filo', 'hilo', 'pila', 'mila', 'lila',
-      'muro', 'duro', 'puro', 'cura', 'lura', 'tura', 'sura', 'nura',
-      'nave', 'cave', 'pave', 'save', 'have', 'dave', 'rave', 'wave',
-      'taxi', 'maxi', 'pixi', 'boxi', 'foxi', 'coxi', 'roxi', 'moxi',
-      'yoga', 'joya', 'soya', 'hoya', 'goya', 'moya', 'roya', 'coya',
-      'fumar', 'lunar', 'solar', 'polar', 'molar', 'colar', 'volar', 'rodar'
+      'casa', 'mesa', 'agua', 'fuego', 'tierra', 'aire', 'libro', 'papel', 'lápiz', 'computadora',
+      'teléfono', 'coche', 'perro', 'gato', 'árbol', 'flor', 'cielo', 'sol', 'luna', 'estrella',
+      'montaña', 'río', 'mar', 'playa', 'ciudad', 'pueblo', 'escuela', 'hospital', 'banco', 'parque',
+      'familia', 'madre', 'padre', 'hermano', 'hermana', 'abuelo', 'abuela', 'amigo', 'trabajo', 'dinero',
+      'tiempo', 'día', 'noche', 'mañana', 'tarde', 'semana', 'mes', 'año', 'color', 'rojo',
+      'azul', 'verde', 'amarillo', 'negro', 'blanco', 'grande', 'pequeño', 'alto', 'bajo', 'nuevo',
+      'viejo', 'bueno', 'malo', 'fácil', 'difícil', 'rápido', 'lento', 'caliente', 'frío', 'dulce',
+      'comida', 'bebida', 'café', 'leche', 'pan', 'carne', 'pescado', 'pollo', 'verdura', 'fruta',
+      'manzana', 'naranja', 'plátano', 'limón', 'tomate', 'patata', 'cebolla', 'zanahoria', 'lechuga', 'arroz',
+      'pasta', 'queso', 'huevo', 'azúcar', 'sal', 'pimienta', 'aceite', 'mantequilla', 'música', 'canción',
+      // Palabras con sílabas específicas del juego
+      'problema', 'solución', 'pregunta', 'respuesta', 'historia', 'presente', 'pasado', 'futuro',
+      'naturaleza', 'animal', 'caballo', 'elefante', 'mariposa', 'serpiente', 'tortuga', 'océano',
+      'bosque', 'desierto', 'continente', 'dirección', 'edificio', 'restaurante', 'universidad',
+      'agricultura', 'importante', 'interesante', 'divertido', 'tranquilo', 'saludable', 'compañía',
+      'matemáticas', 'estudiante', 'profesor', 'entender', 'recordar', 'conocer', 'comenzar',
+      'terminar', 'continuar', 'trabajar', 'descansar', 'levantarse', 'acostarse', 'vestirse',
+      'ducharse', 'cocinar', 'limpiar', 'comprar', 'encontrar', 'mostrar', 'esconder', 'proteger',
+      'defender', 'competir', 'celebrar', 'agradecer', 'disculparse', 'construir', 'inventar',
+      'fotografiar', 'comunicar', 'recomendar', 'organizar', 'preparar', 'decorar'
     ];
 
     basicWords.forEach(word => this.wordSet.add(word.toLowerCase()));
@@ -91,29 +84,79 @@ export class DictionaryService {
       return false;
     }
 
+    // Verificar caracteres válidos (solo letras españolas)
+    const validChars = /^[a-záéíóúüñ]+$/i;
+    if (!validChars.test(cleanWord)) {
+      return false;
+    }
+
     // Verificar si está en nuestro diccionario
     return this.wordSet.has(cleanWord);
   }
 
-  async validateWordWithSyllable(word: string, syllable: string): Promise<boolean> {
-    const isValid = await this.isValidWord(word);
-    if (!isValid) return false;
+  async validateWordWithSyllable(word: string, syllable: string): Promise<{
+    isValid: boolean;
+    reason?: string;
+  }> {
+    const cleanWord = word.toLowerCase().trim();
+    const cleanSyllable = syllable.toLowerCase().trim();
 
-    const cleanWord = word.toLowerCase();
-    const cleanSyllable = syllable.toLowerCase();
+    // Verificar que la palabra contenga la sílaba
+    if (!cleanWord.includes(cleanSyllable)) {
+      return {
+        isValid: false,
+        reason: 'La palabra no contiene la sílaba requerida'
+      };
+    }
 
-    return cleanWord.includes(cleanSyllable);
+    // Verificar que sea una palabra válida
+    const isValid = await this.isValidWord(cleanWord);
+    if (!isValid) {
+      return {
+        isValid: false,
+        reason: 'Palabra no encontrada en el diccionario'
+      };
+    }
+
+    return { isValid: true };
   }
 
   // Método para agregar palabras dinámicamente
   addWord(word: string): void {
-    this.wordSet.add(word.toLowerCase().trim());
+    const cleanWord = word.toLowerCase().trim();
+    if (cleanWord.length >= 2) {
+      this.wordSet.add(cleanWord);
+      console.log(`Palabra agregada: ${cleanWord}`);
+    }
+  }
+
+  // Método para agregar múltiples palabras
+  addWords(words: string[]): void {
+    let count = 0;
+    words.forEach(word => {
+      const cleanWord = word.toLowerCase().trim();
+      if (cleanWord.length >= 2) {
+        this.wordSet.add(cleanWord);
+        count++;
+      }
+    });
+    console.log(`${count} palabras agregadas al diccionario`);
   }
 
   // Método para obtener estadísticas
-  getStats(): { totalWords: number } {
+  getStats(): { 
+    totalWords: number; 
+    initialized: boolean;
+    averageLength: number;
+  } {
+    const words = Array.from(this.wordSet);
+    const totalLength = words.reduce((sum, word) => sum + word.length, 0);
+    const averageLength = words.length > 0 ? totalLength / words.length : 0;
+
     return {
-      totalWords: this.wordSet.size
+      totalWords: this.wordSet.size,
+      initialized: this.initialized,
+      averageLength: Math.round(averageLength * 100) / 100
     };
   }
 
@@ -130,297 +173,16 @@ export class DictionaryService {
     
     return matches;
   }
-}
 
-// Archivo de datos: src/data/spanish-words.txt (ejemplo de contenido)
-/*
-abandonar
-abdominal
-abecedario
-abedul
-abeja
-abierto
-abogado
-abolir
-abordar
-abrasar
-abrazar
-abreviatura
-abrigado
-abril
-abrir
-absoluto
-absolver
-absorber
-abstención
-abstracto
-abuelo
-abundancia
-aburrir
-acabar
-academia
-acceder
-acceso
-accidente
-acción
-aceite
-acelerar
-aceptar
-acerca
-acero
-acertar
-ácido
-aclamar
-aclarar
-acoger
-acompañar
-aconsejar
-acontecer
-acordar
-acortar
-acostar
-acostumbrar
-actitud
-activar
-activo
-actor
-actriz
-actual
-actuar
-acudir
-acuerdo
-acusar
-adaptación
-adecuado
-adelante
-además
-adentro
-adiós
-adivinar
-administrar
-admirar
-admitir
-adolescente
-adonde
-adoptar
-adorar
-adquirir
-adulto
-advertir
-aeropuerto
-afectar
-afición
-afirmar
-afrontar
-afuera
-agarrar
-agencia
-agitar
-agosto
-agotar
-agradecer
-agrandar
-agregar
-agricultor
-agua
-aguantar
-agudo
-ahí
-ahora
-ahorrar
-aire
-aislar
-ajedrez
-ajeno
-ajustar
-alabanza
-alambrada
-alargar
-alarma
-alba
-alcalde
-alcance
-alcanzar
-alcohol
-alegrar
-alegre
-alejar
-alemán
-alentar
-alfombra
-algo
-algodón
-alguien
-alguno
-alianza
-alimentar
-alimento
-aliviar
-alma
-almacén
-almohada
-almorzar
-alojamiento
-alquilar
-alrededor
-alterar
-alternativa
-alto
-altura
-alumno
-alzar
-amable
-amanecer
-amar
-amargar
-amarillo
-ambicioso
-ambiente
-ambos
-amenazar
-amigo
-amistad
-amor
-amparo
-amplio
-análisis
-analizar
-anaranjado
-ancho
-anciano
-andar
-anécdota
-ángel
-ángulo
-anillo
-ánimo
-aniversario
-anoche
-anotar
-ansiedad
-ante
-antepasado
-anterior
-antes
-anticipar
-antiguo
-anual
-anunciar
-añadir
-año
-apagar
-aparato
-aparcamiento
-aparecer
-aparente
-apartamento
-apartar
-apasionar
-apenas
-apetito
-aplaudir
-aplicar
-apoderar
-apostar
-apoyar
-apreciar
-aprender
-apresar
-apresurar
-apretar
-aprobar
-aprovechar
-aproximar
-apunte
-aquel
-aquí
-árbitro
-árbol
-archivo
-arder
-área
-arena
-argumento
-árido
-arma
-armario
-armonía
-aroma
-arquitecto
-arrancar
-arrastrar
-arreglar
-arriba
-arriesgar
-arrojar
-arroz
-arte
-artículo
-artificial
-artista
-asaltar
-asar
-ascender
-asegurar
-asemeja
-asentir
-así
-asiento
-asignar
-asilo
-asimilar
-asistir
-asombrar
-aspecto
-áspero
-aspirar
-astro
-asumir
-asunto
-asustar
-atacar
-atajo
-atar
-atención
-atender
-atentar
-aterrar
-atleta
-atmósfera
-átomo
-atraer
-atrapar
-atrás
-atravesar
-atreverse
-atribuir
-atropellar
-audacia
-aumento
-aumentar
-aun
-aunque
-auricular
-ausencia
-auténtico
-auto
-autobús
-autor
-autoridad
-autorizar
-avance
-avanzar
-avaro
-ave
-aventura
-avería
-averiguar
-aviación
-avisar
-ayer
-ayuda
-ayudar
-ayuntamiento
-azúcar
-azul
-*/
+  // Método para verificar si el diccionario está listo
+  isReady(): boolean {
+    return this.initialized;
+  }
+
+  // Método para forzar la recarga del diccionario
+  async reloadDictionary(): Promise<void> {
+    this.wordSet.clear();
+    this.initialized = false;
+    await this.initializeDictionary();
+  }
+}

@@ -76,6 +76,7 @@ export class RoomsService {
 
     const members = await this.members.find({
       where: { room: { id: room.id } },
+      relations: ['player'], // 👈 Esto es lo que falta
       order: { joinedAt: 'ASC' },
     });
 

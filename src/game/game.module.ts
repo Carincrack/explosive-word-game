@@ -10,11 +10,14 @@ import { GameEngineService } from './engine/game-engine.service';
 import { RoomMember } from 'src/room/room-member.entity';
 import { GameGateway } from './gateway/game.gateway';
 
+import { CombinationsModule } from 'src/combinations/combinations.module'; // ✅ Importa el módulo
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Game, Room, Player, RoomMember]), // <-- Repos necesarios para GamesService
+    TypeOrmModule.forFeature([Game, Room, Player, RoomMember]),
+    CombinationsModule, // ✅ Importa aquí
   ],
   providers: [GamesService, GameEngineService, GameGateway],
-  exports: [GamesService], // <-- Para que otros módulos puedan usarlo
+  exports: [GamesService],
 })
 export class GameModule {}

@@ -15,6 +15,6 @@ export const typeOrmConfig = (
     process.env.MYSQLPASSWORD || configService.get<string>('DB_PASSWORD'),
   database: process.env.MYSQLDATABASE || configService.get<string>('DB_NAME'),
   entities: [__dirname + '/../**/*.entity.{ts,js}'],
-  synchronize: false,
+  synchronize: true,
   logging: ['schema', 'error'],
 });

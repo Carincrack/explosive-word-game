@@ -1,6 +1,7 @@
 // src/games/engine/game-engine.service.ts
 import { Injectable } from '@nestjs/common';
 import { Server } from 'socket.io';
+import { CombinationsService } from 'src/combinations/combinations.service';
 import { randomLetters3 } from 'src/common/utils/letters';
 
 type PlayerInfo = {
@@ -31,15 +32,19 @@ export class GameEngineService {
     { gameId: number; playerId: number }
   >();
 
+  constructor(private readonly combinationsService: CombinationsService) {}
+
   attachServer(io: Server) {
     this.io = io;
   }
 
-  createState(
+  async createState(
     gameId: number,
     roomId: number,
     players: PlayerInfo[],
-  ): GameState {
+  ): Promise<GameState> {
+    const letras = await this.getLetras();
+
     const st: GameState = {
       roomId,
       gameId,
@@ -47,7 +52,7 @@ export class GameEngineService {
       players,
       currentIndex: 0,
       roundNumber: 1,
-      letters: randomLetters3(),
+      letters: letras,
       turnMs: 15000,
     };
     this.games.set(gameId, st);
@@ -64,34 +69,39 @@ export class GameEngineService {
     return `room-${roomId}`;
   }
 
-  startTurn(gameId: number) {
+  async startTurn(gameId: number) {
     const st = this.games.get(gameId);
     if (!st) return;
+
     const current = st.players[st.currentIndex];
     if (current.eliminated) {
-      this.nextPlayer(gameId);
+      await this.nextPlayer(gameId);
       return;
     }
-    // (re)programa timeout
+
     if (st.turnTimer) clearTimeout(st.turnTimer);
     const expiresAt = Date.now() + st.turnMs;
+
     this.broadcast(gameId, 'TurnChanged', {
       playerId: current.playerId,
       letters: st.letters,
       round: st.roundNumber,
       expiresAt,
     });
+
     st.turnTimer = setTimeout(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       () => this.failTurn(gameId, current.playerId, 'timeout'),
       st.turnMs,
     );
   }
 
-  submitWord(gameId: number, playerId: number, word: string) {
+  async submitWord(gameId: number, playerId: number, word: string) {
     const st = this.games.get(gameId);
     if (!st) return;
+
     const current = st.players[st.currentIndex];
-    if (current.playerId !== playerId) return; // no es su turno
+    if (current.playerId !== playerId) return;
     if (st.turnTimer) clearTimeout(st.turnTimer);
 
     const ok = wordSatisfiesLetters(word, st.letters);
@@ -103,20 +113,22 @@ export class GameEngineService {
         word,
         letters: st.letters,
       });
+
       st.roundNumber += 1;
-      st.letters = randomLetters3();
-      this.nextPlayer(gameId);
+      st.letters = await this.getLetras();
+      await this.nextPlayer(gameId);
     }
   }
 
-  private failTurn(gameId: number, playerId: number, reason: 'timeout') {
+  private async failTurn(gameId: number, playerId: number, reason: 'timeout') {
     const st = this.games.get(gameId)!;
     const current = st.players[st.currentIndex];
     if (current.playerId !== playerId) return;
+
     this.loseLife(st, current, reason, null);
     st.roundNumber += 1;
-    st.letters = randomLetters3();
-    this.nextPlayer(gameId);
+    st.letters = await this.getLetras();
+    await this.nextPlayer(gameId);
   }
 
   private loseLife(
@@ -143,14 +155,15 @@ export class GameEngineService {
     this.checkEnd(st);
   }
 
-  private nextPlayer(gameId: number) {
+  private async nextPlayer(gameId: number) {
     const st = this.games.get(gameId)!;
     if (st.status === 'Finished') return;
-    // avanza índice hasta encontrar vivo
+
     do {
       st.currentIndex = (st.currentIndex + 1) % st.players.length;
     } while (st.players[st.currentIndex].eliminated);
-    this.startTurn(gameId);
+
+    await this.startTurn(gameId);
   }
 
   private checkEnd(st: GameState) {
@@ -163,10 +176,14 @@ export class GameEngineService {
       if (st.turnTimer) clearTimeout(st.turnTimer);
     }
   }
+
+  private async getLetras(): Promise<string> {
+    const combinacion = await this.combinationsService.getRandom();
+    return combinacion?.code || randomLetters3();
+  }
 }
 
 function wordSatisfiesLetters(word: string, letters: string): boolean {
-  // Ejemplo simple: valida si todas las letras están en la palabra
   const required = letters.toLowerCase().split('');
   const available = word.toLowerCase().split('');
   return required.every((char) => available.includes(char));

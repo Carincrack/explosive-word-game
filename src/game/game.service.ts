@@ -1,4 +1,3 @@
-// src/games/games.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -18,7 +17,7 @@ export class GamesService {
     @InjectRepository(Game) private games: Repository<Game>,
     @InjectRepository(Room) private rooms: Repository<Room>,
     @InjectRepository(Player) private players: Repository<Player>,
-    @InjectRepository(RoomMember) private members: Repository<RoomMember>, // 👈 inyectar
+    @InjectRepository(RoomMember) private members: Repository<RoomMember>,
     private engine: GameEngineService,
   ) {}
 
@@ -31,7 +30,7 @@ export class GamesService {
     // ✅ Cargar jugadores unidos a la sala
     const members = await this.members.find({
       where: { room: { id: roomId } },
-      relations: ['player'], // 👈 asegúrate de traer el Player
+      relations: ['player'],
     });
 
     if (members.length < 2)
@@ -50,9 +49,9 @@ export class GamesService {
       eliminated: false,
     }));
 
-    // Crear estado e iniciar primer turno
-    const state = this.engine.createState(game.id, room.id, statePlayers);
-    this.engine.startTurn(state.gameId);
+    // ✅ Esperar el estado (ya que ahora es una función async)
+    const state = await this.engine.createState(game.id, room.id, statePlayers);
+    void this.engine.startTurn(state.gameId);
 
     // Marcar la sala como InProgress
     room.status = RoomStatus.InProgress;
@@ -60,6 +59,7 @@ export class GamesService {
 
     return { gameId: game.id, roomId: room.id };
   }
+
   async createAndStartByCode(roomCode: string) {
     const room = await this.rooms.findOne({
       where: { code: roomCode.trim().toUpperCase() },

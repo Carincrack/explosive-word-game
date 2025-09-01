@@ -4,7 +4,7 @@ import { PlayersGateway } from './players.gateway';
 import { GameModule } from '../game/game.module';
 
 @Module({
-  imports: [forwardRef(() => GameModule)], // <-- forwardRef para romper circular dependency
+  imports: [forwardRef(() => GameModule)],
   providers: [PlayersService, PlayersGateway],
   exports: [PlayersService],
 })

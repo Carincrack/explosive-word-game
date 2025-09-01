@@ -1,12 +1,15 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { GameService } from './game.service';
 import { GameGateway } from './game.gateway';
-import { WordlistService } from './wordlist';
 import { PlayersModule } from '../players/players.module';
+import { WordlistModule } from '../wordlist/wordlist.module';
 
 @Module({
-  imports: [forwardRef(() => PlayersModule)], // <-- forwardRef aquí también
-  providers: [GameService, GameGateway, WordlistService],
+  imports: [
+    forwardRef(() => PlayersModule),
+    WordlistModule
+  ],
+  providers: [GameService, GameGateway],
   exports: [GameService],
 })
 export class GameModule {}

@@ -15,7 +15,7 @@ export interface Player {
 export interface RoomOptions {
   turnSeconds: number;
   lives: number;
-  language: 'es'; // Solo español
+  language: 'es';
 }
 
 export interface Room {
@@ -51,13 +51,38 @@ export interface PublicRoomState {
   turnEndsAt?: number;
 }
 
+export interface ChatMessage {
+  from: string;
+  message: string;
+  at: number;
+}
+
+export interface GameEvent {
+  type: 'player_joined' | 'player_left' | 'game_started' | 'game_ended' | 'turn_timeout' | 'word_submitted';
+  playerId?: string;
+  playerName?: string;
+  word?: string;
+  winnerId?: string;
+  timestamp: number;
+}
+
+// DTOs
 export class CreateRoomDto {
   @IsString()
   @Length(2, 16)
   nickname!: string;
 
   @IsOptional()
-  options?: Partial<{ turnSeconds: number; lives: number }>; // Sin language
+  @IsInt()
+  @Min(5)
+  @Max(30)
+  turnSeconds?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  lives?: number;
 }
 
 export class JoinRoomDto {
@@ -83,9 +108,15 @@ export class ChatDto {
 }
 
 export class UpdateOptionsDto {
-  @IsOptional() @IsInt() @Min(5) @Max(30)
+  @IsOptional()
+  @IsInt()
+  @Min(5)
+  @Max(30)
   turnSeconds?: number;
 
-  @IsOptional() @IsInt() @Min(1) @Max(5)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
   lives?: number;
 }
